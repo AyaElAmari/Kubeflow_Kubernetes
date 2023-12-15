@@ -19,7 +19,7 @@ https://kubernetes.io/fr/docs/setup/learning-environment/minikube/
 # Launch Minikube command
 minikube dashboard 
 
-# Launch minikube Kubernetes
+# Launch Kubernetes command
 minikube dashboard 
 ```
 
