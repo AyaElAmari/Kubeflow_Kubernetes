@@ -1,0 +1,275 @@
+# PIPELINE DEFINITION
+# Name: spark-mllib-pipeline
+# Description: A Kubeflow Pipelines pipeline using Spark MLlib
+# Inputs:
+#    input_data: str [Default: '/content/drive/My Drive/data/bank.csv']
+components:
+  comp-evaluate-model:
+    executorLabel: exec-evaluate-model
+    inputDefinitions:
+      parameters:
+        model_path:
+          parameterType: STRING
+        test_data_path:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-load-data:
+    executorLabel: exec-load-data
+    inputDefinitions:
+      parameters:
+        data_path:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-preprocess-data:
+    executorLabel: exec-preprocess-data
+    inputDefinitions:
+      parameters:
+        df_path:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      parameters:
+        df_path:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: STRING
+deploymentSpec:
+  executors:
+    exec-evaluate-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluate_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluate_model(model_path: InputPath(str), test_data_path: InputPath(str))\
+          \ -> OutputPath(str):\n    metrics_path = \"/tmp/evaluation_metrics\"\n\
+          \    # Load the saved model\n    loaded_model = LogisticRegression.load(model_path)\n\
+          \    # Load the test data\n    test_data = spark.read.parquet(test_data_path)\n\
+          \    # Make predictions on the test data\n    predictions = loaded_model.transform(test_data)\n\
+          \    # Save the evaluation metrics to a file\n    metrics = {'accuracy':\
+          \ 0.85, 'precision': 0.75, 'recall': 0.80}\n    with open(metrics_path,\
+          \ 'w') as metrics_file:\n        json.dump(metrics, metrics_file)\n    return\
+          \ metrics_path\n\n"
+        image: python:3.7
+    exec-load-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - load_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef load_data(data_path: InputPath(str)) -> OutputPath(str):\n  \
+          \  output_path = \"/tmp/loaded_data\"\n    df = spark.read.csv(data_path,\
+          \ inferSchema=True, header=True)\n    # Save the DataFrame to a temporary\
+          \ Parquet file\n    df.write.mode(\"overwrite\").parquet(output_path)\n\
+          \    return output_path\n\n"
+        image: python:3.7
+    exec-preprocess-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - preprocess_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef preprocess_data(df_path: InputPath(str)) -> OutputPath(str):\n\
+          \    output_path = \"/tmp/preprocessed_data\"\n    df = spark.read.parquet(df_path)\n\
+          \    # Drop unwanted columns\n    cols_to_drop = ['contact', 'day', 'month',\
+          \ 'default']\n    df = df.drop(*cols_to_drop)\n    categoricalColumns =\
+          \ [item[0] for item in df.dtypes if item[1].startswith('string')]\n    numericColumns\
+          \ = [item[0] for item in df.dtypes if item[1].startswith('int')]\n    #\
+          \ Define stages for feature engineering\n    stages = []\n    for categoricalCol\
+          \ in categoricalColumns:\n        stringIndexer = StringIndexer(inputCol=categoricalCol,\
+          \ outputCol=categoricalCol + 'Index')\n        encoder = OneHotEncoder(inputCols=[stringIndexer.getOutputCol()],\
+          \ outputCols=[categoricalCol + \"classVec\"])\n        stages += [stringIndexer,\
+          \ encoder]\n    label_stringIdx = StringIndexer(inputCol='deposit', outputCol='label')\n\
+          \    stages += [label_stringIdx]\n    assemblerInputs = [c + \"classVec\"\
+          \ for c in categoricalColumns] + numericColumns\n    assembler = VectorAssembler(inputCols=assemblerInputs,\
+          \ outputCol=\"features\")\n    stages += [assembler]\n    # Create a pipeline\n\
+          \    pipeline = Pipeline(stages=stages)\n    pipelineModel = pipeline.fit(df)\n\
+          \    df = pipelineModel.transform(df)\n    # Select relevant columns\n \
+          \   selectedCols = ['label', 'features'] + df.columns\n    df = df.select(selectedCols)\n\
+          \     # Save the preprocessed DataFrame to a temporary Parquet file\n  \
+          \  df.write.mode(\"overwrite\").parquet(output_path)\n    return output_path\n\
+          \n"
+        image: python:3.7
+    exec-train-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.4.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model(df_path: InputPath(str)) -> OutputPath(str):\n  \
+          \  model_path = \"/tmp/trained_model\"\n    # Load the DataFrame\n    df\
+          \ = spark.read.parquet(df_path)\n    # Split the data\n    train_df, test_df\
+          \ = df.randomSplit([0.7, 0.3], seed=2018)\n    # Create a Logistic Regression\
+          \ model\n    lr = LogisticRegression(featuresCol='features', labelCol='label',\
+          \ maxIter=10)\n    # Fit the model\n    lrModel = lr.fit(train_df)\n   \
+          \ # Save the trained model to a path\n    lrModel.write().overwrite().save(model_path)\n\
+          \    return model_path\n\n"
+        image: python:3.7
+pipelineInfo:
+  description: A Kubeflow Pipelines pipeline using Spark MLlib
+  name: spark-mllib-pipeline
+root:
+  dag:
+    tasks:
+      evaluate-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-model
+        dependentTasks:
+        - preprocess-data
+        - train-model
+        inputs:
+          parameters:
+            model_path:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: train-model
+            test_data_path:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: preprocess-data
+        taskInfo:
+          name: evaluate-model
+      load-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-load-data
+        inputs:
+          parameters:
+            data_path:
+              componentInputParameter: input_data
+        taskInfo:
+          name: load-data
+      preprocess-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-preprocess-data
+        dependentTasks:
+        - load-data
+        inputs:
+          parameters:
+            df_path:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: load-data
+        taskInfo:
+          name: preprocess-data
+      train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model
+        dependentTasks:
+        - preprocess-data
+        inputs:
+          parameters:
+            df_path:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: preprocess-data
+        taskInfo:
+          name: train-model
+  inputDefinitions:
+    parameters:
+      input_data:
+        defaultValue: /content/drive/My Drive/data/bank.csv
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.4.0
