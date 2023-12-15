@@ -1,7 +1,8 @@
 # Orchestrating an ML Spark Pipeline with Kubeflow on Kubernetes
+
 ## Overall Project Architecture
 
-![Project Architecture](https://github.com/AyaElAmari/Kubeflow_Kubernetes/blob/main/Architecture_kubefiw_kubernetes.png
+![Project Architecture](https://github.com/AyaElAmari/Kubeflow_Kubernetes/blob/main/Architecture_kubefiw_kubernetes.png)
 
 Provide a brief description of the architecture and key components of your project.
 
