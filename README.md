@@ -10,14 +10,14 @@ Provide a brief description of the architecture and key components of your proje
 To run this project, you need to use the following command:
 
 ## Docker Installation
-```bash
-# official link to install Docker
+
+### official link to install Docker
 https://www.docker.com/products/docker-desktop/
-```
+
 
 ## Kubernetes installation
-```bash
-# Enable Kubernetes in Docker Desktop
+
+### Enable Kubernetes in Docker Desktop
 
 To leverage Kubernetes for orchestration, follow these steps to enable it in Docker Desktop:
 
@@ -27,24 +27,28 @@ To leverage Kubernetes for orchestration, follow these steps to enable it in Doc
 
 This enables Kubernetes support in Docker Desktop, allowing you to deploy and manage your applications using Kubernetes.
 
-# official link to install minikube
+### official link to install minikube
 https://kubernetes.io/fr/docs/setup/learning-environment/minikube/
 
-# Launch Minikube command
+### Launch Minikube command
+```bash
 minikube dashboard 
-
-# Launch Kubernetes command
+```
+### Launch Kubernetes command
+```bash
 minikube dashboard 
 ```
 
 ## Kubeflow installation
+
+### Kubeflow installation command
 ```bash
-# Kubeflow installation command
 set PIPELINE_VERSION=2.0.5
 kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=$PIPELINE_VERSION"
 kubectl wait --for condition=established --timeout=60s crd/applications.app.k8s.io
 kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic-pns?ref=$PIPELINE_VERSION"
-
-# Verify that the Kubeflow Pipelines UI is accessible by port-forwarding
+```
+### Verify that the Kubeflow Pipelines UI is accessible by port-forwarding
+```bash
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 ```
